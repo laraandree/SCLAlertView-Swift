@@ -9,23 +9,23 @@
 import Foundation
 import UIKit
 fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l < r
-  case (nil, _?):
-    return true
-  default:
-    return false
-  }
+    switch (lhs, rhs) {
+    case let (l?, r?):
+        return l < r
+    case (nil, _?):
+        return true
+    default:
+        return false
+    }
 }
 
 fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l > r
-  default:
-    return rhs < lhs
-  }
+    switch (lhs, rhs) {
+    case let (l?, r?):
+        return l > r
+    default:
+        return rhs < lhs
+    }
 }
 
 
@@ -54,7 +54,7 @@ public enum SCLAlertViewStyle {
         }
         
     }
-
+    
 }
 
 // Animation Styles
@@ -148,14 +148,14 @@ open class SCLAlertView: UIViewController {
         let kCircleIconHeight: CGFloat
         let kTitleTop:CGFloat
         let kTitleHeight:CGFloat
-	let kTitleMinimumScaleFactor: CGFloat
+        let kTitleMinimumScaleFactor: CGFloat
         let kWindowWidth: CGFloat
         var kWindowHeight: CGFloat
         var kTextHeight: CGFloat
         let kTextFieldHeight: CGFloat
         let kTextViewdHeight: CGFloat
         let kButtonHeight: CGFloat
-		let circleBackgroundColor: UIColor
+        let circleBackgroundColor: UIColor
         let contentViewColor: UIColor
         let contentViewBorderColor: UIColor
         let titleColor: UIColor
@@ -197,7 +197,7 @@ open class SCLAlertView: UIViewController {
             self.kTextFieldHeight = kTextFieldHeight
             self.kTextViewdHeight = kTextViewdHeight
             self.kButtonHeight = kButtonHeight
-			self.circleBackgroundColor = circleBackgroundColor
+            self.circleBackgroundColor = circleBackgroundColor
             self.contentViewColor = contentViewColor
             self.contentViewBorderColor = contentViewBorderColor
             self.titleColor = titleColor
@@ -356,18 +356,18 @@ open class SCLAlertView: UIViewController {
         
         // Set background frame
         view.frame.size = sz
-
+        
         let hMargin: CGFloat = 12
         let defaultTopOffset: CGFloat = 32
-
+        
         // get actual height of title text
         var titleActualHeight: CGFloat = 0
         if let title = labelTitle.text {
-          titleActualHeight = title.heightWithConstrainedWidth(width: appearance.kWindowWidth - hMargin * 2, font: labelTitle.font) + 10
-          // get the larger height for the title text
-          titleActualHeight = (titleActualHeight > appearance.kTitleHeight ? titleActualHeight : appearance.kTitleHeight)
+            titleActualHeight = title.heightWithConstrainedWidth(width: appearance.kWindowWidth - hMargin * 2, font: labelTitle.font) + 10
+            // get the larger height for the title text
+            titleActualHeight = (titleActualHeight > appearance.kTitleHeight ? titleActualHeight : appearance.kTitleHeight)
         }
-
+        
         // computing the right size to use for the textView
         let maxHeight = sz.height - 100 // max overall height
         var consumedHeight = CGFloat(0)
@@ -414,7 +414,7 @@ open class SCLAlertView: UIViewController {
         circleBG.frame = CGRect(x:x, y:y+appearance.kCircleBackgroundTopPosition, width:kCircleHeightBackground, height:kCircleHeightBackground)
         
         //adjust Title frame based on circularIcon show/hide flag
-//        let titleOffset : CGFloat = appearance.showCircularIcon ? 0.0 : -12.0
+        //        let titleOffset : CGFloat = appearance.showCircularIcon ? 0.0 : -12.0
         let titleOffset: CGFloat = 0
         labelTitle.frame = labelTitle.frame.offsetBy(dx: 0, dy: titleOffset)
         
@@ -502,7 +502,7 @@ open class SCLAlertView: UIViewController {
         appearance.setkWindowHeight(appearance.kWindowHeight + appearance.kTextViewdHeight)
         // Add text view
         let txt = UITextView()
-        // No placeholder with UITextView but you can use KMPlaceholderTextView library 
+        // No placeholder with UITextView but you can use KMPlaceholderTextView library
         txt.font = appearance.kTextFont
         //txt.autocapitalizationType = UITextAutocapitalizationType.Words
         //txt.clearButtonMode = UITextFieldViewMode.WhileEditing
@@ -516,6 +516,17 @@ open class SCLAlertView: UIViewController {
     @discardableResult
     open func addButton(_ title:String, backgroundColor:UIColor? = nil, textColor:UIColor? = nil, showTimeout:SCLButton.ShowTimeoutConfiguration? = nil, action:@escaping ()->Void)->SCLButton {
         let btn = addButton(title, backgroundColor: backgroundColor, textColor: textColor, showTimeout: showTimeout)
+        btn.actionType = SCLActionType.closure
+        btn.action = action
+        btn.addTarget(self, action:#selector(SCLAlertView.buttonTapped(_:)), for:.touchUpInside)
+        btn.addTarget(self, action:#selector(SCLAlertView.buttonTapDown(_:)), for:[.touchDown, .touchDragEnter])
+        btn.addTarget(self, action:#selector(SCLAlertView.buttonRelease(_:)), for:[.touchUpInside, .touchUpOutside, .touchCancel, .touchDragOutside] )
+        return btn
+    }
+    
+    @discardableResult
+    open func addButton(_ title:String, image: UIImage, backgroundColor:UIColor? = nil, textColor:UIColor? = nil, showTimeout:SCLButton.ShowTimeoutConfiguration? = nil, action:@escaping ()->Void)->SCLButton {
+        let btn = addButton(title,image: image, backgroundColor: backgroundColor, textColor: textColor, showTimeout: showTimeout)
         btn.actionType = SCLActionType.closure
         btn.action = action
         btn.addTarget(self, action:#selector(SCLAlertView.buttonTapped(_:)), for:.touchUpInside)
@@ -550,6 +561,36 @@ open class SCLAlertView: UIViewController {
         btn.customTextColor = textColor
         btn.initialTitle = title
         btn.showTimeout = showTimeout
+        contentView.addSubview(btn)
+        buttons.append(btn)
+        return btn
+    }
+    
+    @discardableResult
+    fileprivate func addButton(_ title:String,image: UIImage, backgroundColor:UIColor? = nil, textColor:UIColor? = nil, showTimeout:SCLButton.ShowTimeoutConfiguration? = nil)->SCLButton {
+        // Update view height
+        appearance.setkWindowHeight(appearance.kWindowHeight + appearance.kButtonHeight)
+        
+        // Add button
+        let btn = SCLButton()
+        btn.layer.masksToBounds = true
+        btn.setTitle(title, for: UIControlState())
+        btn.titleLabel?.font = UIFont.boldSystemFont(ofSize: 12)
+        btn.titleLabel?.numberOfLines = 2
+        btn.customBackgroundColor = backgroundColor
+        btn.customTextColor = textColor
+        btn.initialTitle = title
+        
+        btn.titleLabel?.textAlignment = .center
+        btn.showTimeout = showTimeout
+        
+        let img = UIImageView.init(frame: CGRect.init(x: appearance.kWindowWidth*0.6, y: appearance.kButtonHeight*0.4, width: 12, height: 12))
+        img.image = image
+        
+        btn.addSubview(img)
+        btn.bringSubview(toFront: img)
+        
+        
         contentView.addSubview(btn)
         buttons.append(btn)
         return btn
@@ -844,7 +885,7 @@ open class SCLAlertView: UIViewController {
         
         // Animate in the alert view
         self.showAnimation(animationStyle)
-       
+        
         // Chainable objects
         return SCLAlertViewResponder(alertview: self)
     }
@@ -857,7 +898,7 @@ open class SCLAlertView: UIViewController {
         var animationCenter : CGPoint = rv.center
         
         switch animationStyle {
-
+            
         case .noAnimation:
             self.view.alpha = 1.0
             return;
@@ -878,23 +919,23 @@ open class SCLAlertView: UIViewController {
             animationStartOrigin = CGPoint(x: self.baseView.frame.origin.x - animationStartOffset, y: animationStartOrigin.y)
             animationCenter = CGPoint(x: animationCenter.x - boundingAnimationOffset, y: animationCenter.y)
         }
-
+        
         self.baseView.frame.origin = animationStartOrigin
         
         if self.appearance.dynamicAnimatorActive {
-            UIView.animate(withDuration: animationDuration, animations: { 
+            UIView.animate(withDuration: animationDuration, animations: {
                 self.view.alpha = 1.0
             })
             self.animate(item: self.baseView, center: rv.center)
         } else {
             UIView.animate(withDuration: animationDuration, animations: {
                 self.view.alpha = 1.0
-                 self.baseView.center = animationCenter
-                }, completion: { finished in
-                    UIView.animate(withDuration: animationDuration, animations: {
-                        self.view.alpha = 1.0
-                        self.baseView.center = rv.center
-                    })
+                self.baseView.center = animationCenter
+            }, completion: { finished in
+                UIView.animate(withDuration: animationDuration, animations: {
+                    self.view.alpha = 1.0
+                    self.baseView.center = rv.center
+                })
             })
         }
     }
@@ -904,7 +945,7 @@ open class SCLAlertView: UIViewController {
     var snapBehavior : UISnapBehavior?
     
     fileprivate func animate(item : UIView , center: CGPoint) {
-    
+        
         if let snapBehavior = self.snapBehavior {
             self.animator?.removeBehavior(snapBehavior)
         }
@@ -928,41 +969,41 @@ open class SCLAlertView: UIViewController {
             guard let showTimeout = btn.showTimeout else {
                 continue
             }
-
+            
             let timeoutStr: String = showTimeout.prefix + String(Int(timeout.value)) + showTimeout.suffix
             let txt = String(btn.initialTitle) + " " + timeoutStr
             btn.setTitle(txt, for: UIControlState())
             
         }
-
+        
     }
     
     // Close SCLAlertView
     @objc open func hideView() {
         UIView.animate(withDuration: 0.2, animations: {
             self.view.alpha = 0
-            }, completion: { finished in
-                
-                // Stop timeoutTimer so alertView does not attempt to hide itself and fire it's dimiss block a second time when close button is tapped
-                self.timeoutTimer?.invalidate()
-                
-                // Stop showTimeoutTimer
-                self.showTimeoutTimer?.invalidate()
-                
-                if let dismissBlock = self.dismissBlock {
-                    // Call completion handler when the alert is dismissed
-                    dismissBlock()
-                }
-                
-                // This is necessary for SCLAlertView to be de-initialized, preventing a strong reference cycle with the viewcontroller calling SCLAlertView.
-                for button in self.buttons {
-                    button.action = nil
-                    button.target = nil
-                    button.selector = nil
-                }
-                
-                self.view.removeFromSuperview()
-                self.selfReference = nil
+        }, completion: { finished in
+            
+            // Stop timeoutTimer so alertView does not attempt to hide itself and fire it's dimiss block a second time when close button is tapped
+            self.timeoutTimer?.invalidate()
+            
+            // Stop showTimeoutTimer
+            self.showTimeoutTimer?.invalidate()
+            
+            if let dismissBlock = self.dismissBlock {
+                // Call completion handler when the alert is dismissed
+                dismissBlock()
+            }
+            
+            // This is necessary for SCLAlertView to be de-initialized, preventing a strong reference cycle with the viewcontroller calling SCLAlertView.
+            for button in self.buttons {
+                button.action = nil
+                button.target = nil
+                button.selector = nil
+            }
+            
+            self.view.removeFromSuperview()
+            self.selfReference = nil
         })
     }
     
